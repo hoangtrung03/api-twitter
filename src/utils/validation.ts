@@ -1,6 +1,6 @@
 import { RunnableValidationChains } from 'express-validator/src/middlewares/schema'
 import express from 'express'
-import { body, validationResult, ValidationChain } from 'express-validator'
+import { validationResult, ValidationChain } from 'express-validator'
 // can be reused by many routes
 
 // sequential processing, stops running validations chain if the previous one fails.

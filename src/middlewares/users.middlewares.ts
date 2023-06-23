@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { checkSchema } from 'express-validator'
+import usersService from '~/services/users.services'
 import { validate } from '~/utils/validation'
 
 export const loginValidator = (req: Request, res: Response, next: NextFunction) => {
@@ -19,16 +20,25 @@ export const registerValidator = validate(
       isString: true,
       isLength: {
         options: {
-          min: 0,
+          min: 1,
           max: 100
         }
       },
       trim: true
     },
     email: {
-      isEmail: true,
       notEmpty: true,
-      trim: true
+      isEmail: true,
+      trim: true,
+      custom: {
+        options: async (value) => {
+          const isExistEmail = await usersService.checkEmailExist(value)
+          if (isExistEmail) {
+            throw new Error('Email already exists')
+          }
+          return true
+        }
+      }
     },
     password: {
       notEmpty: true,
@@ -48,7 +58,7 @@ export const registerValidator = validate(
           minSymbols: 1
         },
         errorMessage:
-          'Password must be at least 6 characters long and contain at least 1 lowercase letter, 1 uppercase letter, 1 number, 1 symbols'
+          'Password must be at least 6 characters long and contain at least 1 lowercase letter, 1 uppercase letter, 1 number, and 1 symbol'
       }
     },
     confirm_password: {
@@ -69,7 +79,7 @@ export const registerValidator = validate(
           minSymbols: 1
         },
         errorMessage:
-          'Password must be at least 6 characters long and contain at least 1 lowercase letter, 1 uppercase letter, 1 number, 1 symbols'
+          'Password must be at least 6 characters long and contain at least 1 lowercase letter, 1 uppercase letter, 1 number, and 1 symbol'
       },
       custom: {
         options: (value, { req }) => {
