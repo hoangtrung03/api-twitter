@@ -72,7 +72,7 @@ class UsersService {
   }
 
   async logout(refresh_token: string) {
-    await databaseService.refreshTokens.deleteOne({ token: refresh_token })
+    const result = await databaseService.refreshTokens.deleteOne({ token: refresh_token })
     return {
       message: USER_MESSAGES.LOGOUT_SUCCESS
     }
