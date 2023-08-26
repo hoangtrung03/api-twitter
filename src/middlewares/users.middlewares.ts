@@ -2,7 +2,7 @@ import { checkSchema } from 'express-validator'
 import { Request } from 'express'
 import { JsonWebTokenError } from 'jsonwebtoken'
 import { capitalize } from 'lodash'
-import httpStatus from '~/constants/httpStatus'
+import HTTP_STATUS from '~/constants/httpStatus'
 import { USER_MESSAGES } from '~/constants/messages'
 import { ErrorWithStatus } from '~/models/Errors'
 import databaseService from '~/services/database.services'
@@ -185,7 +185,7 @@ export const accessTokenValidator = validate(
             if (!access_token) {
               throw new ErrorWithStatus({
                 message: USER_MESSAGES.ACCESS_TOKEN_IS_REQUIRED,
-                status: httpStatus.UNAUTHORIZED
+                status: HTTP_STATUS.UNAUTHORIZED
               })
             }
             try {
@@ -197,7 +197,7 @@ export const accessTokenValidator = validate(
             } catch (error) {
               throw new ErrorWithStatus({
                 message: capitalize((error as JsonWebTokenError).message),
-                status: httpStatus.UNAUTHORIZED
+                status: HTTP_STATUS.UNAUTHORIZED
               })
             }
             return true
@@ -219,7 +219,7 @@ export const refreshTokenValidator = validate(
             if (!value) {
               throw new ErrorWithStatus({
                 message: USER_MESSAGES.REFRESH_TOKEN_IS_REQUIRED,
-                status: httpStatus.UNAUTHORIZED
+                status: HTTP_STATUS.UNAUTHORIZED
               })
             }
             try {
@@ -230,7 +230,7 @@ export const refreshTokenValidator = validate(
               if (refresh_token === null) {
                 throw new ErrorWithStatus({
                   message: USER_MESSAGES.USED_REFRESH_TOKEN_OR_NOT_EXIST,
-                  status: httpStatus.UNAUTHORIZED
+                  status: HTTP_STATUS.UNAUTHORIZED
                 })
               }
               ;(req as Request).decoded_refresh_token = decoded_refresh_token
@@ -238,7 +238,7 @@ export const refreshTokenValidator = validate(
               if (error instanceof JsonWebTokenError) {
                 throw new ErrorWithStatus({
                   message: capitalize(error.message),
-                  status: httpStatus.UNAUTHORIZED
+                  status: HTTP_STATUS.UNAUTHORIZED
                 })
               }
               throw error
@@ -261,7 +261,7 @@ export const emailVerifyTokenValidator = validate(
             if (!value) {
               throw new ErrorWithStatus({
                 message: USER_MESSAGES.EMAIL_VERIFY_TOKEN_IS_REQUIRED,
-                status: httpStatus.UNAUTHORIZED
+                status: HTTP_STATUS.UNAUTHORIZED
               })
             }
             try {
@@ -274,7 +274,7 @@ export const emailVerifyTokenValidator = validate(
             } catch (error) {
               throw new ErrorWithStatus({
                 message: capitalize((error as JsonWebTokenError).message),
-                status: httpStatus.UNAUTHORIZED
+                status: HTTP_STATUS.UNAUTHORIZED
               })
             }
           }
