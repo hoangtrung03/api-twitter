@@ -53,6 +53,19 @@ class UsersService {
     return Promise.all([this.signAccessToken(user_id), this.signRefreshToken(user_id)])
   }
 
+  private signForgotPasswordToken(user_id: string) {
+    return signToken({
+      payload: {
+        user_id,
+        token_type: TokenType.ForgotPasswordToken
+      },
+      privateKey: process.env.JWT_SECRET_FORGOT_PASSWORD_TOKEN as string,
+      options: {
+        expiresIn: process.env.FORGOT_PASSWORD_TOKEN_EXPIRES_IN
+      }
+    })
+  }
+
   async register(payload: RegisterRequestBody) {
     const user_id = new ObjectId()
     const email_verify_token = await this.signEmailVerifyToken(user_id.toString())
@@ -76,6 +89,7 @@ class UsersService {
       refresh_token
     }
   }
+
   async checkEmailExist(email: string) {
     const user = await databaseService.users.findOne({ email })
     return Boolean(user)
@@ -137,6 +151,24 @@ class UsersService {
     )
     return {
       message: USER_MESSAGES.RESEND_VERIFY_EMAIL_SUCCESS
+    }
+  }
+
+  async forgotPassword(user_id: string) {
+    const forgot_password_token = await this.signForgotPasswordToken(user_id)
+    await databaseService.users.updateOne(
+      { _id: new ObjectId(user_id) },
+      {
+        $set: {
+          forgot_password_token: forgot_password_token,
+          updated_at: new Date()
+        }
+      }
+    )
+    //send email with link to email user ex: https://twitter.com/forgot-password?token=token
+    console.log('forgot_password_token', forgot_password_token)
+    return {
+      message: USER_MESSAGES.CHECK_EMAIL_TO_RESET_PASSWORD
     }
   }
 }
