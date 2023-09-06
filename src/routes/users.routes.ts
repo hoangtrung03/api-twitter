@@ -95,11 +95,12 @@ usersRouter.post(
 usersRouter.post('/reset-password', resetPasswordValidator, wrapRequestHandler(resetPasswordsController))
 
 /**
- * Description: Get my profile
+ * Description: Update my profile
  * Path: /me
- * Method: GET
+ * Method: PATCH
  * Headers: { access_token:string }
+ * Body: UserSchema
  */
-usersRouter.get('/me', accessTokenValidator, wrapRequestHandler(getMeController))
+usersRouter.patch('/me', accessTokenValidator, wrapRequestHandler(getMeController))
 
 export default usersRouter
