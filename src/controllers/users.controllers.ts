@@ -4,6 +4,7 @@ import { ParamsDictionary } from 'express-serve-static-core'
 import { ObjectId } from 'mongodb'
 import {
   ForgotPasswordReqBody,
+  GetProfileReqParams,
   LoginRequestBody,
   LogoutReqBody,
   RegisterRequestBody,
@@ -18,6 +19,8 @@ import userService from '~/services/users.services'
 import databaseService from '~/services/database.services'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { UserVerifyStatus } from '~/constants/enums'
+import { pick } from 'lodash'
+import usersService from '~/services/users.services'
 
 export const loginController = async (req: Request<ParamsDictionary, any, LoginRequestBody>, res: Response) => {
   const user = req.user as User
@@ -161,6 +164,16 @@ export const updateMeController = async (
   const user = await userService.updateMe(user_id, body)
   return res.json({
     message: USER_MESSAGES.UPDATE_ME_SUCCESS,
+    result: user
+  })
+}
+
+export const getProfileController = async (req: Request<GetProfileReqParams>, res: Response, next: NextFunction) => {
+  const { username } = req.params
+  const user = await usersService.getProfile(username)
+  
+  return res.json({
+    message: USER_MESSAGES.GET_PROFILE_SUCCESS,
     result: user
   })
 }

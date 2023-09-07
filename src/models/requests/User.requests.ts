@@ -47,6 +47,10 @@ export interface UpdateMeReqBody {
   cover_photo?: string
 }
 
+export interface GetProfileReqParams {
+  username: string
+}
+
 export interface TokenPayload extends JwtPayload {
   user_id: string
   token_type: TokenType
