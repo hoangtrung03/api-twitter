@@ -5,6 +5,7 @@ import HTTP_STATUS from '~/constants/httpStatus'
 import { USER_MESSAGES } from '~/constants/messages'
 import { ErrorWithStatus } from '~/models/Errors'
 import { RegisterRequestBody, UpdateMeReqBody } from '~/models/requests/User.requests'
+import Follower from '~/models/schemas/Followers.schema'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import User from '~/models/schemas/User.schema'
 import databaseService from '~/services/database.services'
@@ -265,11 +266,72 @@ class UsersService {
     if (user === null) {
       throw new ErrorWithStatus({
         message: USER_MESSAGES.USER_NOT_FOUND,
-        status: HTTP_STATUS.NOT_FOUND,
-      });
+        status: HTTP_STATUS.NOT_FOUND
+      })
     }
 
     return user
+  }
+
+  async follow(user_id: string, followed_user_id: string) {
+    const follower = await databaseService.followers.findOne({
+      user_id: new ObjectId(user_id),
+      followed_user_id: new ObjectId(followed_user_id)
+    })
+
+    if (follower === null) {
+      await databaseService.followers.insertOne(
+        new Follower({
+          user_id: new ObjectId(user_id),
+          followed_user_id: new ObjectId(followed_user_id)
+        })
+      )
+      return {
+        message: USER_MESSAGES.FOLLOW_SUCCESS
+      }
+    }
+    
+    return {
+      message: USER_MESSAGES.FOLLOWED
+    }
+  }
+
+  async unFollow(user_id: string, followed_user_id: string) {
+    const follower = await databaseService.followers.findOne({
+      user_id: new ObjectId(user_id),
+      followed_user_id: new ObjectId(followed_user_id)
+    })
+    
+    if (follower === null) {
+      return {
+        message: USER_MESSAGES.ALREADY_UNFOLLOWED
+      }
+    }
+    
+    await databaseService.followers.deleteOne({
+      user_id: new ObjectId(user_id),
+      followed_user_id: new ObjectId(followed_user_id)
+    })
+    return {
+      message: USER_MESSAGES.UNFOLLOW_SUCCESS
+    }
+  }
+
+  async changePassword(user_id: string, new_password: string) {
+    await databaseService.users.updateOne(
+      { _id: new ObjectId(user_id) },
+      {
+        $set: {
+          password: hashPassword(new_password)
+        },
+        $currentDate: {
+          updated_at: true
+        }
+      }
+    )
+    return {
+      message: USER_MESSAGES.CHANGE_PASSWORD_SUCCESS
+    }
   }
 }
 
