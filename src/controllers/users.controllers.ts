@@ -25,6 +25,22 @@ import { UserVerifyStatus } from '~/constants/enums'
 import { pick } from 'lodash'
 import usersService from '~/services/users.services'
 
+/**
+ * Handles the login request and returns the login result.
+ *
+ * @param {Request<ParamsDictionary, any, LoginRequestBody>} req - The request object.
+ * @param {Response} res - The response object.
+ * @return {Promise<void>} - The JSON response containing the login success message and the login result.
+ */
+
+/**
+ * Registers a new user.
+ *
+ * @param {Request<ParamsDictionary, any, RegisterRequestBody>} req - The request object.
+ * @param {Response} res - The response object.
+ * @param {NextFunction} next - The next function.
+ * @return {Promise<void>} A promise that resolves when the user is successfully registered.
+ */
 export const loginController = async (req: Request<ParamsDictionary, any, LoginRequestBody>, res: Response) => {
   const user = req.user as User
   const user_id = user._id as ObjectId
@@ -32,12 +48,21 @@ export const loginController = async (req: Request<ParamsDictionary, any, LoginR
     user_id: user_id.toString(),
     verify: UserVerifyStatus.Verified
   })
+
   return res.json({
     message: USER_MESSAGES.LOGIN_SUCCESS,
     result
   })
 }
 
+/**
+ * Registers a new user.
+ *
+ * @param {Request<ParamsDictionary, any, RegisterRequestBody>} req - The request object.
+ * @param {Response} res - The response object.
+ * @param {NextFunction} next - The next function.
+ * @return {Promise<any>} A promise that resolves to the registration result.
+ */
 export const registerController = async (
   req: Request<ParamsDictionary, any, RegisterRequestBody>,
   res: Response,
@@ -50,6 +75,13 @@ export const registerController = async (
   })
 }
 
+/**
+ * Logout controller function.
+ *
+ * @param {Request<ParamsDictionary, any, LogoutReqBody>} req - The request object.
+ * @param {Response} res - The response object.
+ * @return {Promise<Response>} The JSON response containing the result.
+ */
 export const logoutController = async (req: Request<ParamsDictionary, any, LogoutReqBody>, res: Response) => {
   const { refresh_token } = req.body
   const result = await userService.logout(refresh_token)
@@ -58,6 +90,14 @@ export const logoutController = async (req: Request<ParamsDictionary, any, Logou
   })
 }
 
+/**
+ * Controller function to verify user email.
+ *
+ * @param {Request<ParamsDictionary, any, VerifyEmailReqBody>} req - The request object.
+ * @param {Response} res - The response object.
+ * @param {NextFunction} next - The next function.
+ * @return {Promise<void>} Promise that resolves to void.
+ */
 export const verifyEmailController = async (
   req: Request<ParamsDictionary, any, VerifyEmailReqBody>,
   res: Response,
@@ -94,6 +134,14 @@ export const verifyEmailController = async (
   }
 }
 
+/**
+ * Resends the verification email to a user.
+ *
+ * @param {Request} req - The request object.
+ * @param {Response} res - The response object.
+ * @param {NextFunction} next - The next function.
+ * @return {Promise<Response>} The response containing the result of the resend.
+ */
 export const resendVerifyEmailController = async (req: Request, res: Response, next: NextFunction) => {
   const { user_id } = req.decoded_authorization as TokenPayload
   const user = await databaseService.users.findOne({ _id: new ObjectId(user_id) })
@@ -111,6 +159,14 @@ export const resendVerifyEmailController = async (req: Request, res: Response, n
   return res.json(result)
 }
 
+/**
+ * Controller function for handling forgot password requests.
+ *
+ * @param {Request<ParamsDictionary, any, ForgotPasswordReqBody>} req - The request object.
+ * @param {Response} res - The response object.
+ * @param {NextFunction} next - The next middleware function.
+ * @return {Promise<Response>} The JSON response containing the result of the forgot password operation.
+ */
 export const forgotPasswordController = async (
   req: Request<ParamsDictionary, any, ForgotPasswordReqBody>,
   res: Response,
@@ -124,6 +180,14 @@ export const forgotPasswordController = async (
   return res.json(result)
 }
 
+/**
+ * Verify the forgot password controller.
+ *
+ * @param {Request<ParamsDictionary, any, VerifyForgotPasswordReqBody>} req - The request object.
+ * @param {Response} res - The response object.
+ * @param {NextFunction} next - The next function.
+ * @return {any} The JSON response with the success message.
+ */
 export const verifyForgotPasswordController = async (
   req: Request<ParamsDictionary, any, VerifyForgotPasswordReqBody>,
   res: Response,
@@ -134,6 +198,14 @@ export const verifyForgotPasswordController = async (
   })
 }
 
+/**
+ * Resets the password for a user.
+ *
+ * @param {Request<ParamsDictionary, any, ResetPasswordReqBody>} req - The request object.
+ * @param {Response} res - The response object.
+ * @param {NextFunction} next - The next function.
+ * @return {Promise<void>} - Returns a promise that resolves to void.
+ */
 export const resetPasswordsController = async (
   req: Request<ParamsDictionary, any, ResetPasswordReqBody>,
   res: Response,
@@ -148,6 +220,14 @@ export const resetPasswordsController = async (
   })
 }
 
+/**
+ * Retrieves the user's information.
+ *
+ * @param {Request} req - The request object.
+ * @param {Response} res - The response object.
+ * @param {NextFunction} next - The next function.
+ * @return {Promise<any>} The JSON response containing the user's information.
+ */
 export const getMeController = async (req: Request, res: Response, next: NextFunction) => {
   const { user_id } = req.decoded_authorization as TokenPayload
   const result = await userService.getMe(user_id)
@@ -157,6 +237,14 @@ export const getMeController = async (req: Request, res: Response, next: NextFun
   })
 }
 
+/**
+ * Updates the user information.
+ *
+ * @param {Request<ParamsDictionary, any, UpdateMeReqBody>} req - The request object.
+ * @param {Response} res - The response object.
+ * @param {NextFunction} next - The next function.
+ * @return {Promise<void>} A promise that resolves with the updated user information.
+ */
 export const updateMeController = async (
   req: Request<ParamsDictionary, any, UpdateMeReqBody>,
   res: Response,
@@ -171,6 +259,14 @@ export const updateMeController = async (
   })
 }
 
+/**
+ * Retrieves the profile of a user.
+ *
+ * @param {Request<GetProfileReqParams>} req - The request object.
+ * @param {Response} res - The response object.
+ * @param {NextFunction} next - The next function.
+ * @return {Promise<void>} - A promise that resolves to the JSON response containing the user profile.
+ */
 export const getProfileController = async (req: Request<GetProfileReqParams>, res: Response, next: NextFunction) => {
   const { username } = req.params
   const user = await usersService.getProfile(username)
@@ -181,6 +277,14 @@ export const getProfileController = async (req: Request<GetProfileReqParams>, re
   })
 }
 
+/**
+ * Controller function to handle following a user.
+ *
+ * @param {Request<ParamsDictionary, any, FollowReqBody>} req - The request object.
+ * @param {Response} res - The response object.
+ * @param {NextFunction} next - The next middleware function.
+ * @return {Promise<Response>} The JSON response.
+ */
 export const followController = async (
   req: Request<ParamsDictionary, any, FollowReqBody>,
   res: Response,
@@ -192,6 +296,14 @@ export const followController = async (
   return res.json(result)
 }
 
+/**
+ * Unfollows a user.
+ *
+ * @param {Request<UnFollowReqParams>} req - the request object
+ * @param {Response} res - the response object
+ * @param {NextFunction} next - the next function
+ * @return {Promise<void>} - a promise that resolves with no value
+ */
 export const unFollowController = async (req: Request<UnFollowReqParams>, res: Response, next: NextFunction) => {
   const { user_id } = req.decoded_authorization as TokenPayload
   const { user_id: followed_user_id } = req.params
@@ -199,6 +311,14 @@ export const unFollowController = async (req: Request<UnFollowReqParams>, res: R
   return res.json(result)
 }
 
+/**
+ * Handles the request to change the user's password.
+ *
+ * @param {Request<ParamsDictionary, any, ChangePasswordReqBody>} req - The request object.
+ * @param {Response} res - The response object.
+ * @param {NextFunction} next - The next middleware function.
+ * @return {Promise<Response>} The response object with the result of the password change.
+ */
 export const changePasswordController = async (
   req: Request<ParamsDictionary, any, ChangePasswordReqBody>,
   res: Response,
