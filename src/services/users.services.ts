@@ -11,6 +11,7 @@ import User from '~/models/schemas/User.schema'
 import databaseService from '~/services/database.services'
 import { hashPassword } from '~/utils/crypto'
 import { signToken } from '~/utils/jwt'
+import axios from 'axios'
 config()
 class UsersService {
   private signAccessToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
@@ -123,6 +124,96 @@ class UsersService {
     }
   }
 
+  private async getOAuthGoogleToken(code: string) {
+    const body = {
+      code,
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_SECRET_KEY,
+      redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+      grant_type: 'authorization_code'
+    }
+
+    //headers google required
+    const { data } = await axios.post('https://oauth2.googleapis.com/token', body, {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    })
+
+    return data as {
+      access_token: string
+      id_token: string
+    }
+  }
+
+  private async getGoogleUserInfo(access_token: string, id_token: string) {
+    const { data } = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', {
+      headers: {
+        Authorization: `Bearer ${id_token}`
+      },
+      params: {
+        access_token,
+        alt: 'json'
+      }
+    })
+
+    return data as {
+      id: string
+      email: string
+      verified_email: string
+      name: string
+      given_name: string
+      family_name: string
+      picture: string
+      locale: string
+    }
+  }
+
+  async oAuth(code: string) {
+    const { id_token, access_token } = await this.getOAuthGoogleToken(code)
+    const userInfo = await this.getGoogleUserInfo(access_token, id_token)
+
+    if (!userInfo.verified_email) {
+      throw new ErrorWithStatus({
+        message: USER_MESSAGES.GMAIL_NOT_VERIFIED,
+        status: HTTP_STATUS.BAD_REQUEST
+      })
+    }
+    // Check email is exist
+    const user = await databaseService.users.findOne({ email: userInfo.email })
+    // If email is exist go to login
+    if (user) {
+      const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
+        user_id: user._id.toString(),
+        verify: user.verify
+      })
+
+      await databaseService.refreshTokens.insertOne(
+        new RefreshToken({ user_id: new ObjectId(user._id), token: refresh_token })
+      )
+
+      return {
+        access_token,
+        refresh_token,
+        newUser: 0,
+        verify: user.verify
+      }
+    } else {
+      // Random string password
+      const password = Math.random().toString(36).substring(2, 15)
+      // If email is not exist go to register
+      const data = await this.register({
+        email: userInfo.email,
+        name: userInfo.name,
+        date_of_birth: new Date().toISOString(),
+        password: password,
+        confirm_password: password
+      })
+
+      return { ...data, newUser: 1, verify: UserVerifyStatus.Unverified }
+    }
+  }
+
   async logout(refresh_token: string) {
     const result = await databaseService.refreshTokens.deleteOne({ token: refresh_token })
     return {
@@ -148,6 +239,9 @@ class UsersService {
       )
     ])
     const [access_token, refresh_token] = token
+    await databaseService.refreshTokens.insertOne(
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
+    )
     return {
       access_token,
       refresh_token
@@ -290,7 +384,7 @@ class UsersService {
         message: USER_MESSAGES.FOLLOW_SUCCESS
       }
     }
-    
+
     return {
       message: USER_MESSAGES.FOLLOWED
     }
@@ -301,13 +395,13 @@ class UsersService {
       user_id: new ObjectId(user_id),
       followed_user_id: new ObjectId(followed_user_id)
     })
-    
+
     if (follower === null) {
       return {
         message: USER_MESSAGES.ALREADY_UNFOLLOWED
       }
     }
-    
+
     await databaseService.followers.deleteOne({
       user_id: new ObjectId(user_id),
       followed_user_id: new ObjectId(followed_user_id)

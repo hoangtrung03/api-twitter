@@ -24,6 +24,8 @@ import HTTP_STATUS from '~/constants/httpStatus'
 import { UserVerifyStatus } from '~/constants/enums'
 import { pick } from 'lodash'
 import usersService from '~/services/users.services'
+import { config } from 'dotenv'
+config()
 
 /**
  * Handles the login request and returns the login result.
@@ -31,15 +33,6 @@ import usersService from '~/services/users.services'
  * @param {Request<ParamsDictionary, any, LoginRequestBody>} req - The request object.
  * @param {Response} res - The response object.
  * @return {Promise<void>} - The JSON response containing the login success message and the login result.
- */
-
-/**
- * Registers a new user.
- *
- * @param {Request<ParamsDictionary, any, RegisterRequestBody>} req - The request object.
- * @param {Response} res - The response object.
- * @param {NextFunction} next - The next function.
- * @return {Promise<void>} A promise that resolves when the user is successfully registered.
  */
 export const loginController = async (req: Request<ParamsDictionary, any, LoginRequestBody>, res: Response) => {
   const user = req.user as User
@@ -53,6 +46,21 @@ export const loginController = async (req: Request<ParamsDictionary, any, LoginR
     message: USER_MESSAGES.LOGIN_SUCCESS,
     result
   })
+}
+
+/**
+ * Handles the OAuth flow for the API.
+ *
+ * @param {Request} req - The request object containing the query parameters.
+ * @param {Response} res - The response object used to redirect the user.
+ * @return {void} - This function does not return a value.
+ */
+export const oAuthController = async (req: Request, res: Response) => {
+  const { code } = req.query
+  const result = await userService.oAuth(code as string)
+  const urlRedirect = `${process.env.CLIENT_REDIRECT_CALLBACK}?access_token=${result.access_token}&refresh_token=${result.refresh_token}&new_user=${result.newUser}&verify=${result.verify}`
+
+  return res.redirect(urlRedirect)
 }
 
 /**
