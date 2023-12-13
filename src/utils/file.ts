@@ -1,7 +1,7 @@
 import { Request } from 'express'
-import formidable from 'formidable'
+import formidable, { File } from 'formidable'
 import fs from 'fs'
-import path from 'path'
+import { UPLOAD_TEMP_DIR } from '~/constants/dir'
 
 /**
  * Initializes a folder for uploading files.
@@ -9,10 +9,9 @@ import path from 'path'
  * @return {void} No return value.
  */
 export const initFolder = () => {
-    const uploadFolderPath = path.resolve('uploads')
 
-    if(!fs.existsSync(uploadFolderPath)){
-        fs.mkdirSync(uploadFolderPath, {
+    if(!fs.existsSync(UPLOAD_TEMP_DIR)){
+        fs.mkdirSync(UPLOAD_TEMP_DIR, {
             recursive: true // create parent folder nested
         })
     }
@@ -28,13 +27,13 @@ export const handleUploadSingleImage = async (req: Request) => {
     // Way import formidable with commonjs
   // const formidable = (await import('formidable')).default
   const form = formidable({
-    uploadDir: path.resolve('uploads'),
+    uploadDir: UPLOAD_TEMP_DIR,
     maxFiles: 1,
     keepExtensions: true,
     maxFileSize: 5 * 1024 * 1024, // 5 MB
-    filename(name: string, ext: string, part: any, form: any): string {
-      return part.originalFilename || ''
-    },
+    // filename(name: string, ext: string, part: any, form: any): string {
+    //   return part.originalFilename || ''
+    // },
     filter: function({name, originalFilename, mimetype}) {
         const valid = name === 'image' && Boolean(mimetype?.includes('image/'))
 
@@ -47,7 +46,7 @@ export const handleUploadSingleImage = async (req: Request) => {
     
   })
 
-  return new Promise((resolve, reject) => {
+  return new Promise<File>((resolve, reject) => {
     form.parse(req, (err, fields, files) => {
         if (err) {
           return reject(err)
@@ -57,7 +56,14 @@ export const handleUploadSingleImage = async (req: Request) => {
             return reject(new Error('File is required'))
         }
     
-        resolve(files)
+        resolve((files.image as File[])[0])
       })
   })
+}
+
+export const getNameFromFullName = (fullName: string) => {
+  const nameArr = fullName.split('.')
+  nameArr.pop()
+
+  return nameArr.join('')
 }

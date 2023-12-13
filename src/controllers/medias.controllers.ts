@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
-import { handleUploadSingleImage } from '~/utils/file'
+import mediasService from '~/services/medias.services'
 
 /**
  * Uploads a single image.
@@ -10,10 +10,9 @@ import { handleUploadSingleImage } from '~/utils/file'
  * @return {Promise<void>} - a promise that resolves to void
  */
 export const uploadSingleImageController = async (req: Request, res: Response, next: NextFunction) => {
-    const data = await handleUploadSingleImage(req)
+    const result = await mediasService.handleUploadSingleImage(req)
 
     return res.json({
-        message: 'Upload single image success',
-        result: data
+        result: result
     })
 }
