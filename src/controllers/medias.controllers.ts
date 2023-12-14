@@ -10,9 +10,9 @@ import mediasService from '~/services/medias.services'
  * @return {Promise<void>} - a promise that resolves to void
  */
 export const uploadSingleImageController = async (req: Request, res: Response, next: NextFunction) => {
-    const result = await mediasService.handleUploadSingleImage(req)
+  const result = await mediasService.handleUploadSingleImage(req)
 
-    return res.json({
-        result: result
-    })
+  return res.json({
+    result: result
+  })
 }

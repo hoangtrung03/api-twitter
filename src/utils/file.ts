@@ -9,12 +9,11 @@ import { UPLOAD_TEMP_DIR } from '~/constants/dir'
  * @return {void} No return value.
  */
 export const initFolder = () => {
-
-    if(!fs.existsSync(UPLOAD_TEMP_DIR)){
-        fs.mkdirSync(UPLOAD_TEMP_DIR, {
-            recursive: true // create parent folder nested
-        })
-    }
+  if (!fs.existsSync(UPLOAD_TEMP_DIR)) {
+    fs.mkdirSync(UPLOAD_TEMP_DIR, {
+      recursive: true // create parent folder nested
+    })
+  }
 }
 
 /**
@@ -24,7 +23,7 @@ export const initFolder = () => {
  * @return {Promise} - A promise that resolves to the uploaded files.
  */
 export const handleUploadSingleImage = async (req: Request) => {
-    // Way import formidable with commonjs
+  // Way import formidable with commonjs
   // const formidable = (await import('formidable')).default
   const form = formidable({
     uploadDir: UPLOAD_TEMP_DIR,
@@ -34,30 +33,29 @@ export const handleUploadSingleImage = async (req: Request) => {
     // filename(name: string, ext: string, part: any, form: any): string {
     //   return part.originalFilename || ''
     // },
-    filter: function({name, originalFilename, mimetype}) {
-        const valid = name === 'image' && Boolean(mimetype?.includes('image/'))
+    filter: function ({ name, originalFilename, mimetype }) {
+      const valid = name === 'image' && Boolean(mimetype?.includes('image/'))
 
-        if(!valid){
-            form.emit('error' as any, new Error('Invalid file type') as any)
-        }
+      if (!valid) {
+        form.emit('error' as any, new Error('Invalid file type') as any)
+      }
 
-        return valid
+      return valid
     }
-    
   })
 
   return new Promise<File>((resolve, reject) => {
     form.parse(req, (err, fields, files) => {
-        if (err) {
-          return reject(err)
-        }
+      if (err) {
+        return reject(err)
+      }
 
-        if(!Boolean(files.image)){
-            return reject(new Error('File is required'))
-        }
-    
-        resolve((files.image as File[])[0])
-      })
+      if (!Boolean(files.image)) {
+        return reject(new Error('File is required'))
+      }
+
+      resolve((files.image as File[])[0])
+    })
   })
 }
 

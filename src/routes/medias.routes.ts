@@ -1,8 +1,8 @@
-import { Router } from "express";
-import { uploadSingleImageController } from "~/controllers/medias.controllers";
-import { wrapRequestHandler } from "~/utils/handlers";
+import { Router } from 'express'
+import { uploadSingleImageController } from '~/controllers/medias.controllers'
+import { wrapRequestHandler } from '~/utils/handlers'
 
-const mediasRouter = Router();
+const mediasRouter = Router()
 
 /**
  * Description: Upload single file image
