@@ -17,19 +17,20 @@ export const initFolder = () => {
 }
 
 /**
- * Handles the upload of a single image.
+ * Handles the upload of a image.
  *
  * @param {Request} req - The request object.
  * @return {Promise} - A promise that resolves to the uploaded files.
  */
-export const handleUploadSingleImage = async (req: Request) => {
+export const handleUploadImage = async (req: Request) => {
   // Way import formidable with commonjs
   // const formidable = (await import('formidable')).default
   const form = formidable({
     uploadDir: UPLOAD_TEMP_DIR,
-    maxFiles: 1,
+    maxFiles: 4,
     keepExtensions: true,
     maxFileSize: 5 * 1024 * 1024, // 5 MB
+    maxTotalFileSize: 10 * 1024 * 1024, // 10 MB
     // filename(name: string, ext: string, part: any, form: any): string {
     //   return part.originalFilename || ''
     // },
@@ -44,7 +45,7 @@ export const handleUploadSingleImage = async (req: Request) => {
     }
   })
 
-  return new Promise<File>((resolve, reject) => {
+  return new Promise<File[]>((resolve, reject) => {
     form.parse(req, (err, fields, files) => {
       if (err) {
         return reject(err)
@@ -54,7 +55,7 @@ export const handleUploadSingleImage = async (req: Request) => {
         return reject(new Error('File is required'))
       }
 
-      resolve((files.image as File[])[0])
+      resolve(files.image as File[])
     })
   })
 }
