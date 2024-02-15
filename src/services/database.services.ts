@@ -1,8 +1,8 @@
-import { MongoClient, Db, Collection } from 'mongodb'
 import { config } from 'dotenv'
-import User from '~/models/schemas/User.schema'
-import RefreshToken from '~/models/schemas/RefreshToken.schema'
+import { Collection, Db, MongoClient } from 'mongodb'
 import Follower from '~/models/schemas/Followers.schema'
+import RefreshToken from '~/models/schemas/RefreshToken.schema'
+import User from '~/models/schemas/User.schema'
 
 config()
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@twitter.gkdbxzd.mongodb.net/?retryWrites=true&w=majority`

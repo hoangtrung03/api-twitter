@@ -1,8 +1,13 @@
-import { USER_MESSAGES } from '~/constants/messages'
+import { config } from 'dotenv'
 import { NextFunction, Request, Response } from 'express'
 import { ParamsDictionary } from 'express-serve-static-core'
 import { ObjectId } from 'mongodb'
+import { UserVerifyStatus } from '~/constants/enums'
+import HTTP_STATUS from '~/constants/httpStatus'
+import { USER_MESSAGES } from '~/constants/messages'
 import {
+  ChangePasswordReqBody,
+  FollowReqBody,
   ForgotPasswordReqBody,
   GetProfileReqParams,
   LoginRequestBody,
@@ -10,21 +15,14 @@ import {
   RegisterRequestBody,
   ResetPasswordReqBody,
   TokenPayload,
+  UnFollowReqParams,
   UpdateMeReqBody,
   VerifyEmailReqBody,
-  VerifyForgotPasswordReqBody,
-  FollowReqBody,
-  UnFollowReqParams,
-  ChangePasswordReqBody
+  VerifyForgotPasswordReqBody
 } from '~/models/requests/User.requests'
 import User from '~/models/schemas/User.schema'
-import userService from '~/services/users.services'
 import databaseService from '~/services/database.services'
-import HTTP_STATUS from '~/constants/httpStatus'
-import { UserVerifyStatus } from '~/constants/enums'
-import { pick } from 'lodash'
-import usersService from '~/services/users.services'
-import { config } from 'dotenv'
+import { default as userService, default as usersService } from '~/services/users.services'
 config()
 
 /**

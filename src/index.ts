@@ -19,7 +19,7 @@ app.use(express.json())
 app.use('/users', usersRouter)
 app.use('/medias', mediasRouter)
 app.use('/static', staticRouter)
-// app.use('/static', express.static(UPLOAD_DIR))
+// app.use('/static', express.static(UPLOAD_IMAGE_DIR))
 app.use(defaultErrorHandler)
 
 app.listen(port, () => {
