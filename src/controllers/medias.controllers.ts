@@ -21,6 +21,14 @@ export const uploadImageController = async (req: Request, res: Response, next: N
   })
 }
 
+/**
+ * Uploads a video using the mediasService and returns a JSON response with a success message and the result.
+ *
+ * @param {Request} req - the request object
+ * @param {Response} res - the response object
+ * @param {NextFunction} next - the next function
+ * @return {Promise<void>} JSON response with a success message and the result
+ */
 export const uploadVideoController = async (req: Request, res: Response, next: NextFunction) => {
   const result = await mediasService.uploadVideo(req)
 
@@ -30,6 +38,14 @@ export const uploadVideoController = async (req: Request, res: Response, next: N
   })
 }
 
+/**
+ * Controller function to serve an image.
+ *
+ * @param {Request} req - the request object
+ * @param {Response} res - the response object
+ * @param {NextFunction} next - the next function
+ * @return {void} no return value
+ */
 export const serveImageController = async (req: Request, res: Response, next: NextFunction) => {
   const { name } = req.params
 
@@ -40,6 +56,14 @@ export const serveImageController = async (req: Request, res: Response, next: Ne
   })
 }
 
+/**
+ * Serves a video file to the client based on the request parameters.
+ *
+ * @param {Request} req - the request object
+ * @param {Response} res - the response object
+ * @param {NextFunction} next - the next middleware function
+ * @return {void}
+ */
 export const serveVideoController = async (req: Request, res: Response, next: NextFunction) => {
   const { name } = req.params
 

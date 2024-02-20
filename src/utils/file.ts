@@ -63,6 +63,12 @@ export const handleUploadImage = async (req: Request) => {
   })
 }
 
+/**
+ * Handle video upload using formidable library.
+ *
+ * @param {Request} req - the request object
+ * @return {Promise<File[]>} a promise that resolves to an array of File objects
+ */
 export const handleUploadVideo = async (req: Request) => {
   // Way import formidable with commonjs
   // const formidable = (await import('formidable')).default
@@ -106,6 +112,12 @@ export const handleUploadVideo = async (req: Request) => {
   })
 }
 
+/**
+ * Splits the full name into an array using '.' as the delimiter, removes the last element, and then joins the elements into a single string.
+ *
+ * @param {string} fullName - the full name to be processed
+ * @return {string} the name extracted from the full name
+ */
 export const getNameFromFullName = (fullName: string) => {
   const nameArr = fullName.split('.')
   nameArr.pop()
@@ -113,6 +125,12 @@ export const getNameFromFullName = (fullName: string) => {
   return nameArr.join('')
 }
 
+/**
+ * Splits the full name by '.' and returns the last element.
+ *
+ * @param {string} fullName - the full name to extract the extension from
+ * @return {string} the extension extracted from the full name
+ */
 export const getExtension = (fullName: string) => {
   const nameArr = fullName.split('.')
 

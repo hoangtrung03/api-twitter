@@ -11,6 +11,12 @@ import { getNameFromFullName, handleUploadImage, handleUploadVideo } from '~/uti
 
 config()
 class MediaService {
+  /**
+   * Uploads an image from the request and processes it before returning the resulting media objects.
+   *
+   * @param {Request} req - the request object containing the image to upload
+   * @return {Promise<Media[]>} an array of media objects representing the uploaded and processed images
+   */
   async uploadImage(req: Request) {
     const files = await handleUploadImage(req)
     const result: Media[] = await Promise.all(
@@ -34,6 +40,12 @@ class MediaService {
     return result
   }
 
+  /**
+   * Uploads a video based on the given request.
+   *
+   * @param {Request} req - the request object containing the video to be uploaded
+   * @return {Media[]} an array of Media objects representing the uploaded videos
+   */
   async uploadVideo(req: Request) {
     const files = await handleUploadVideo(req)
     const result: Media[] = files.map((file) => {
