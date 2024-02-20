@@ -69,7 +69,6 @@ export const handleUploadVideo = async (req: Request) => {
   const form = formidable({
     uploadDir: UPLOAD_VIDEO_DIR,
     maxFiles: 1,
-    keepExtensions: true,
     maxFileSize: 50 * 1024 * 1024, // 50 MB
     filter: function ({ name, originalFilename, mimetype }) {
       return true
@@ -94,6 +93,14 @@ export const handleUploadVideo = async (req: Request) => {
         return reject(new Error('File is required'))
       }
 
+      const videos = files.video as File[]
+
+      videos.forEach((video) => {
+        const ext = getExtension(video.originalFilename as string)
+        fs.renameSync(video.filepath, video.filepath + '.' + ext)
+        video.newFilename = video.newFilename + '.' + ext
+      })
+
       resolve(files.video as File[])
     })
   })
@@ -104,4 +111,10 @@ export const getNameFromFullName = (fullName: string) => {
   nameArr.pop()
 
   return nameArr.join('')
+}
+
+export const getExtension = (fullName: string) => {
+  const nameArr = fullName.split('.')
+
+  return nameArr[nameArr.length - 1]
 }
