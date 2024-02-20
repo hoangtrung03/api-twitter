@@ -1,6 +1,8 @@
 import { NextFunction, Request, Response } from 'express'
+import fs from 'fs'
 import path from 'path'
 import { UPLOAD_IMAGE_DIR, UPLOAD_VIDEO_DIR } from '~/constants/dir'
+import HTTP_STATUS from '~/constants/httpStatus'
 import { USER_MESSAGES } from '~/constants/messages'
 import mediasService from '~/services/medias.services'
 
@@ -56,20 +58,55 @@ export const serveImageController = async (req: Request, res: Response, next: Ne
   })
 }
 
-/**
- * Serves a video file to the client based on the request parameters.
- *
- * @param {Request} req - the request object
- * @param {Response} res - the response object
- * @param {NextFunction} next - the next middleware function
- * @return {void}
- */
-export const serveVideoController = async (req: Request, res: Response, next: NextFunction) => {
-  const { name } = req.params
+export const serveVideoStreamController = async (req: Request, res: Response, next: NextFunction) => {
+  const range = req.headers.range
 
-  return res.sendFile(path.resolve(UPLOAD_VIDEO_DIR, name), (err) => {
-    if (err) {
-      res.status((err as any).status).send('Not found')
-    }
-  })
+  if (!range) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).send('Requires Range header')
+  }
+
+  const { name } = req.params
+  const videoPath = path.resolve(UPLOAD_VIDEO_DIR, name)
+  // File size in bytes
+  const videoSize = fs.statSync(videoPath).size
+  // File size in each range stream
+  const chunkSize = 10 ** 6 // 1MB
+  // Get bytes start headers range (ex: bytes=1048576-)
+  const start = Number(range.replace(/\D/g, ''))
+  // Get bytes end headers range, out of file size get videoSize
+  const end = Math.min(start + chunkSize, videoSize - 1)
+  // Actual capacity for each video
+  // Will usually be chunkSize except for the last chunk
+  const contentLength = end - start + 1
+  const mime = (await import('mime')).default
+  const contentType = mime.getType(videoPath) || 'video/*'
+
+  /**
+   * Format của header Content-Range: bytes <start>-<end>/<videoSize>
+   * Ví dụ: Content-Range: bytes 1048576-3145727/3145728
+   * Yêu cầu là `end` phải luôn luôn nhỏ hơn `videoSize`
+   * ❌ 'Content-Range': 'bytes 0-100/100'
+   * ✅ 'Content-Range': 'bytes 0-99/100'
+   *
+   * Còn Content-Length sẽ là end - start + 1. Đại diện cho khoản cách.
+   * Để dễ hình dung, mọi người tưởng tượng từ số 0 đến số 10 thì ta có 11 số.
+   * byte cũng tương tự, nếu start = 0, end = 10 thì ta có 11 byte.
+   * Công thức là end - start + 1
+   *
+   * ChunkSize = 50
+   * videoSize = 100
+   * |0----------------50|51----------------99|100 (end)
+   * stream 1: start = 0, end = 50, contentLength = 51
+   * stream 2: start = 51, end = 99, contentLength = 49
+   */
+  const headers = {
+    'Content-Range': `bytes ${start}-${end}/${videoSize}`,
+    'Accept-Ranges': 'bytes',
+    'Content-Length': contentLength,
+    'Content-Type': contentType
+  }
+
+  res.writeHead(HTTP_STATUS.PARTIAL_CONTENT, headers)
+  const videoSteams = fs.createReadStream(videoPath, { start, end })
+  videoSteams.pipe(res)
 }
