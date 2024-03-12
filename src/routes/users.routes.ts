@@ -1,25 +1,23 @@
 import { Router } from 'express'
 import {
-  verifyEmailController,
+  followController,
+  forgotPasswordController,
+  getMeController,
+  getProfileController,
   loginController,
   logoutController,
+  oAuthController,
   registerController,
   resendVerifyEmailController,
-  forgotPasswordController,
-  verifyForgotPasswordController,
   resetPasswordsController,
-  getMeController,
-  updateMeController,
-  getProfileController,
-  followController,
   unFollowController,
-  changePasswordController,
-  oAuthController
+  updateMeController,
+  verifyEmailController,
+  verifyForgotPasswordController
 } from '~/controllers/users.controllers'
 import { filterMiddleware } from '~/middlewares/common.middlewares'
 import {
   accessTokenValidator,
-  changePasswordValidator,
   emailVerifyTokenValidator,
   followValidator,
   forgotPasswordValidator,
@@ -184,19 +182,21 @@ usersRouter.delete(
   wrapRequestHandler(unFollowController)
 )
 
-/**
- * Description: Change password
- * Path: /change-password
- * Method: PUT
- * Header: { Authorization: Bearer <access_token> }
- * Body: { old_password: string, password: string, confirm_password: string }
- */
-usersRouter.put(
-  '/change-password',
-  accessTokenValidator,
-  verifiedUserValidator,
-  changePasswordValidator,
-  wrapRequestHandler(changePasswordController)
-)
+// /**
+//  * Description: Change password
+//  * Path: /change-password
+//  * Method: PUT
+//  * Header: { Authorization: Bearer <access_token> }
+//  * Body: { old_password: string, password: string, confirm_password: string }
+//  */
+// usersRouter.put(
+//   '/change-password',
+//   accessTokenValidator,
+//   verifiedUserValidator,
+//   changePasswordValidator,
+//   wrapRequestHandler(changePasswordController)
+// )
+
+// usersRouter.post('/refresh-token', refreshTokenValidator, wrapRequestHandler(refreshTokenController))
 
 export default usersRouter

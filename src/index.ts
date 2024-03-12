@@ -21,6 +21,9 @@ app.use('/users', usersRouter)
 app.use('/medias', mediasRouter)
 app.use('/static', staticRouter)
 app.use('/static', express.static(UPLOAD_VIDEO_DIR))
+app.use('/health-check', (req, res) => {
+  res.status(200).send('OK')
+})
 app.use(defaultErrorHandler)
 
 app.listen(port, () => {
