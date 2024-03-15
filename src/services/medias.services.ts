@@ -23,8 +23,8 @@ class MediaService {
       files.map(async (file) => {
         const newName = getNameFromFullName(file.newFilename)
         const newPath = path.resolve(UPLOAD_IMAGE_DIR, `${newName}.jpg`)
+        sharp.cache(false)
         await sharp(file.filepath).jpeg({ quality: 50 }).toFile(newPath)
-
         // Wait for sharp processing to complete before unlinking the file
         fs.unlinkSync(file.filepath)
 
