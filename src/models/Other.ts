@@ -1,6 +1,6 @@
-import { MediaType } from "~/constants/enums";
+import { MediaType } from '~/constants/enums'
 
 export interface Media {
-    url: string
-    type: MediaType // image, video
+  url: string
+  type: MediaType // image, video
 }

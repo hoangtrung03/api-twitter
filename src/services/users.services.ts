@@ -105,7 +105,15 @@ class UsersService {
     }
   }
 
-  async refreshToken({user_id, verify, refresh_token}:{user_id: string, verify: UserVerifyStatus, refresh_token: string}) {
+  async refreshToken({
+    user_id,
+    verify,
+    refresh_token
+  }: {
+    user_id: string
+    verify: UserVerifyStatus
+    refresh_token: string
+  }) {
     const [new_access_token, new_refresh_token] = await Promise.all([
       this.signAccessToken({ user_id, verify: verify }),
       this.signRefreshToken({ user_id, verify: verify }),
