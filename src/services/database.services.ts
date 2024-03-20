@@ -1,6 +1,5 @@
 import { config } from 'dotenv'
 import { Collection, Db, MongoClient } from 'mongodb'
-import { envConfig } from '~/constants/config'
 import Follower from '~/models/schemas/Followers.schema'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import User from '~/models/schemas/User.schema'
@@ -41,7 +40,7 @@ class DatabaseService {
   }
 
   get videoStatus(): Collection<VideoStatus> {
-    return this.db.collection(envConfig.dbVideoStatusCollection)
+    return this.db.collection(process.env.DB_VIDEO_STATUS_COLLECTION as string)
   }
 }
 

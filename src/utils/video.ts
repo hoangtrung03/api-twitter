@@ -331,7 +331,12 @@ const encodeMaxOriginal = async ({
 }
 
 export const encodeHLSWithMultipleVideoStreams = async (inputPath: string) => {
-  const [bitrate, resolution] = await Promise.all([getBitrate(inputPath), getResolution(inputPath)])
+  const bitrate = await getBitrate(inputPath)
+  console.log('encode=====================')
+  const resolution = await getResolution(inputPath)
+  console.log('encode=====================aaa')
+
+  // const [bitrate, resolution] = await Promise.all([getBitrate(inputPath), getResolution(inputPath)])
   const parent_folder = path.join(inputPath, '..')
   const outputSegmentPath = path.join(parent_folder, 'v%v/fileSequence%d.ts')
   const outputPath = path.join(parent_folder, 'v%v/prog_index.m3u8')
@@ -340,15 +345,19 @@ export const encodeHLSWithMultipleVideoStreams = async (inputPath: string) => {
   const bitrate1440 = bitrate > MAXIMUM_BITRATE_1440P ? MAXIMUM_BITRATE_1440P : bitrate
   const isHasAudio = await checkVideoHasAudio(inputPath)
   let encodeFunc = encodeMax720
+  console.log('resolution', resolution)
   if (resolution.height > 720) {
     encodeFunc = encodeMax1080
   }
+
   if (resolution.height > 1080) {
     encodeFunc = encodeMax1440
   }
+
   if (resolution.height > 1440) {
     encodeFunc = encodeMaxOriginal
   }
+
   await encodeFunc({
     bitrate: {
       720: bitrate720,
@@ -362,5 +371,7 @@ export const encodeHLSWithMultipleVideoStreams = async (inputPath: string) => {
     outputSegmentPath,
     resolution
   })
+  console.log('encode=====================end')
+
   return true
 }

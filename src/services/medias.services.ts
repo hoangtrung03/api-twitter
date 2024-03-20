@@ -26,13 +26,15 @@ class Queue {
 
   async enqueue(item: string) {
     this.items.push(item)
-    const idName = getNameFromFullName(item.split('/').pop() as string)
+    const idName = getNameFromFullName(item.split('\\').pop() as string)
+
     await databaseService.videoStatus.insertOne(
       new VideoStatus({
-        name: idName,
+        name: idName.toString(),
         status: EncodingStatus.Pending
       })
     )
+
     this.processEncode()
   }
   async processEncode() {
@@ -41,7 +43,8 @@ class Queue {
     if (this.items.length > 0) {
       this.encoding = true
       const videoPath = this.items[0]
-      const idName = getNameFromFullName(videoPath.split('/').pop() as string)
+      const idName = getNameFromFullName(videoPath.split('\\').pop() as string)
+
       await databaseService.videoStatus.updateOne(
         {
           name: idName
@@ -55,11 +58,12 @@ class Queue {
           }
         }
       )
+
       try {
-        const mime = (await import('mime')).default
         this.items.shift()
         await encodeHLSWithMultipleVideoStreams(videoPath)
         const files = getFiles(path.resolve(UPLOAD_VIDEO_DIR, idName))
+        const mime = (await import('mime')).default
         await Promise.all(
           files.map((filepath) => {
             const filename = 'videos-hls' + filepath.replace(path.resolve(UPLOAD_VIDEO_DIR), '')
