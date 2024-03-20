@@ -1,7 +1,6 @@
 import { config } from 'dotenv'
 import { Request } from 'express'
 import fs from 'fs'
-import mime from 'mime'
 import path from 'path'
 import { rimrafSync } from 'rimraf'
 import sharp from 'sharp'
@@ -24,9 +23,9 @@ class Queue {
     this.items = []
     this.encoding = false
   }
+
   async enqueue(item: string) {
     this.items.push(item)
-    // item = /home/duy/Downloads/12312312/1231231221.mp4
     const idName = getNameFromFullName(item.split('/').pop() as string)
     await databaseService.videoStatus.insertOne(
       new VideoStatus({
@@ -38,6 +37,7 @@ class Queue {
   }
   async processEncode() {
     if (this.encoding) return
+
     if (this.items.length > 0) {
       this.encoding = true
       const videoPath = this.items[0]
@@ -56,12 +56,12 @@ class Queue {
         }
       )
       try {
+        const mime = (await import('mime')).default
         this.items.shift()
         await encodeHLSWithMultipleVideoStreams(videoPath)
         const files = getFiles(path.resolve(UPLOAD_VIDEO_DIR, idName))
         await Promise.all(
           files.map((filepath) => {
-            // filepath: /Users/duthanhduoc/Documents/DuocEdu/NodeJs-Super/Twitter/uploads/videos/6vcpA2ujL7EuaD5gvaPvl/v0/fileSequence0.ts
             const filename = 'videos-hls' + filepath.replace(path.resolve(UPLOAD_VIDEO_DIR), '')
             return uploadFileToS3({
               filepath,
@@ -182,6 +182,7 @@ class MediaService {
     )
     return result
   }
+
   async getVideoStatus(id: string) {
     const data = await databaseService.videoStatus.findOne({ name: id })
     return data
