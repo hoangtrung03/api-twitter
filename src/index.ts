@@ -11,6 +11,9 @@ import { initFolder } from './utils/file'
 config()
 databaseService.connect().then(() => {
   databaseService.indexUsers()
+  databaseService.indexRefreshTokens()
+  databaseService.indexVideoStatus()
+  databaseService.indexFollowers()
 })
 const app = express()
 const port = process.env.PORT || 4000
