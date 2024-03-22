@@ -11,12 +11,22 @@ import RefreshToken from '~/models/schemas/RefreshToken.schema'
 import User from '~/models/schemas/User.schema'
 import databaseService from '~/services/database.services'
 import { hashPassword } from '~/utils/crypto'
-import { signToken } from '~/utils/jwt'
+import { signToken, verifyToken } from '~/utils/jwt'
 config()
 class UsersService {
+  private decodeAccessToken(token: string) {
+    return verifyToken({
+      token,
+      secretOrPublicKey: process.env.JWT_SECRET_ACCESS_TOKEN as string
+    })
+  }
+  private decodeRefreshToken(token: string) {
+    return verifyToken({
+      token,
+      secretOrPublicKey: process.env.JWT_SECRET_REFRESH_TOKEN as string
+    })
+  }
   private signAccessToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
-    const expiresIn = process.env.ACCESS_TOKEN_EXPIRES_IN ?? '15m'
-
     return signToken({
       payload: {
         user_id,
@@ -25,22 +35,37 @@ class UsersService {
       },
       privateKey: process.env.JWT_SECRET_ACCESS_TOKEN as string,
       options: {
-        expiresIn
+        expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN
       }
-    }).then((token) => {
-      const expiresAt = new Date()
-      expiresAt.setMinutes(expiresAt.getMinutes() + parseInt(expiresIn, 10))
-      const expiresTimestamp = Math.floor(expiresAt.getTime() / 1000)
+    }).then(async (token) => {
+      const { exp } = await this.decodeAccessToken(token)
 
       return {
         token,
-        expiresAt: expiresTimestamp
+        expiresAt: exp
       }
     })
   }
 
-  private signRefreshToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+  private signRefreshToken({ user_id, verify, exp }: { user_id: string; verify: UserVerifyStatus; exp?: number }) {
     const expiresIn = process.env.REFRESH_TOKEN_EXPIRES_IN ?? '100d'
+
+    if (exp) {
+      return signToken({
+        payload: {
+          user_id,
+          token_type: TokenType.RefreshToken,
+          verify,
+          exp
+        },
+        privateKey: process.env.JWT_SECRET_REFRESH_TOKEN as string
+      }).then((token) => {
+        return {
+          token,
+          expiresAt: exp
+        }
+      })
+    }
 
     return signToken({
       payload: {
@@ -52,14 +77,12 @@ class UsersService {
       options: {
         expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN
       }
-    }).then((token) => {
-      const expiresAt = new Date()
-      expiresAt.setDate(expiresAt.getDate() + parseInt(expiresIn, 10))
-      const expiresTimestamp = Math.floor(expiresAt.getTime() / 1000)
+    }).then(async (token) => {
+      const { exp } = await this.decodeRefreshToken(token)
 
       return {
         token,
-        expiresAt: expiresTimestamp
+        expiresAt: exp
       }
     })
   }
@@ -116,8 +139,11 @@ class UsersService {
       user_id: user_id.toString(),
       verify: UserVerifyStatus.Unverified
     })
+
+    const { iat, exp } = await this.decodeRefreshToken(refresh_token.token)
+
     await databaseService.refreshTokens.insertOne(
-      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token.token })
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token.token, iat, exp })
     )
     console.log('email_verify_token', email_verify_token)
 
@@ -132,17 +158,30 @@ class UsersService {
   async refreshToken({
     user_id,
     verify,
-    refresh_token
+    refresh_token,
+    exp
   }: {
     user_id: string
     verify: UserVerifyStatus
     refresh_token: string
+    exp: number
   }) {
     const [new_access_token, new_refresh_token] = await Promise.all([
       this.signAccessToken({ user_id, verify: verify }),
-      this.signRefreshToken({ user_id, verify: verify }),
+      this.signRefreshToken({ user_id, verify: verify, exp }),
       databaseService.refreshTokens.deleteOne({ token: refresh_token })
     ])
+
+    const decodeToken = await this.decodeRefreshToken(new_refresh_token.token)
+
+    await databaseService.refreshTokens.insertOne(
+      new RefreshToken({
+        user_id: new ObjectId(user_id),
+        token: new_refresh_token.token,
+        iat: decodeToken.iat,
+        exp: decodeToken.exp
+      })
+    )
 
     return {
       access_token: new_access_token.token,
@@ -154,6 +193,7 @@ class UsersService {
 
   async checkEmailExist(email: string) {
     const user = await databaseService.users.findOne({ email })
+
     return Boolean(user)
   }
 
@@ -162,8 +202,9 @@ class UsersService {
       this.signAccessToken({ user_id, verify }),
       this.signRefreshToken({ user_id, verify })
     ])
+    const { iat, exp } = await this.decodeRefreshToken(refreshToken.token)
     await databaseService.refreshTokens.insertOne(
-      new RefreshToken({ user_id: new ObjectId(user_id), token: refreshToken.token })
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refreshToken.token, iat, exp })
     )
 
     return {
@@ -229,17 +270,19 @@ class UsersService {
         status: HTTP_STATUS.BAD_REQUEST
       })
     }
+
     // Check email is exist
     const user = await databaseService.users.findOne({ email: userInfo.email })
+
     // If email is exist go to login
     if (user) {
       const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
         user_id: user._id.toString(),
         verify: user.verify
       })
-
+      const { iat, exp } = await this.decodeRefreshToken(refresh_token.token)
       await databaseService.refreshTokens.insertOne(
-        new RefreshToken({ user_id: new ObjectId(user._id), token: refresh_token.token })
+        new RefreshToken({ user_id: new ObjectId(user._id), token: refresh_token.token, iat, exp })
       )
 
       return {
@@ -265,13 +308,19 @@ class UsersService {
   }
 
   async logout(refresh_token: string) {
-    const result = await databaseService.refreshTokens.deleteOne({ token: refresh_token })
+    await databaseService.refreshTokens.deleteOne({ token: refresh_token })
+
     return {
       message: USER_MESSAGES.LOGOUT_SUCCESS
     }
   }
 
-  async verifyEmail(user_id: string) {
+  async verifyEmail(user_id: string): Promise<{
+    access_token: string
+    refresh_token: string
+    expires_in_access_token: number
+    expires_in_refresh_token: number
+  }> {
     const [token] = await Promise.all([
       this.signAccessAndRefreshToken({
         user_id: user_id.toString(),
@@ -289,9 +338,11 @@ class UsersService {
       )
     ])
     const [access_token, refresh_token] = token
+    const { iat, exp } = await this.decodeRefreshToken(refresh_token.token)
     await databaseService.refreshTokens.insertOne(
-      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token.token })
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token.token, iat, exp })
     )
+
     return {
       access_token: access_token.token,
       refresh_token: refresh_token.token,
@@ -318,6 +369,7 @@ class UsersService {
         }
       }
     )
+
     return {
       message: USER_MESSAGES.RESEND_VERIFY_EMAIL_SUCCESS
     }
@@ -339,6 +391,7 @@ class UsersService {
     )
     //send email with link to email user ex: https://twitter.com/forgot-password?token=token
     console.log('forgot_password_token', forgot_password_token)
+
     return {
       message: USER_MESSAGES.CHECK_EMAIL_TO_RESET_PASSWORD
     }
@@ -432,6 +485,7 @@ class UsersService {
           followed_user_id: new ObjectId(followed_user_id)
         })
       )
+
       return {
         message: USER_MESSAGES.FOLLOW_SUCCESS
       }
@@ -458,6 +512,7 @@ class UsersService {
       user_id: new ObjectId(user_id),
       followed_user_id: new ObjectId(followed_user_id)
     })
+
     return {
       message: USER_MESSAGES.UNFOLLOW_SUCCESS
     }
@@ -475,6 +530,7 @@ class UsersService {
         }
       }
     )
+
     return {
       message: USER_MESSAGES.CHANGE_PASSWORD_SUCCESS
     }

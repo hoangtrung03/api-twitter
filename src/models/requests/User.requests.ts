@@ -74,4 +74,6 @@ export interface TokenPayload extends JwtPayload {
   user_id: string
   token_type: TokenType
   verify: UserVerifyStatus
+  exp: number // Convert Epoch to Date
+  iat: number // Convert Epoch to Date
 }

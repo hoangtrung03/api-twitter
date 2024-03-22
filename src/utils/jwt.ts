@@ -28,6 +28,7 @@ export const signToken = ({
       if (error) {
         throw reject(error)
       }
+
       resolve(token as string)
     })
   })
@@ -46,6 +47,7 @@ export const verifyToken = ({ token, secretOrPublicKey }: { token: string; secre
       if (error) {
         throw reject(error)
       }
+
       resolve(decoded as TokenPayload)
     })
   })
