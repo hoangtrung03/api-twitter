@@ -15,6 +15,8 @@ import { signToken } from '~/utils/jwt'
 config()
 class UsersService {
   private signAccessToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+    const expiresIn = process.env.ACCESS_TOKEN_EXPIRES_IN ?? '15m'
+
     return signToken({
       payload: {
         user_id,
@@ -23,12 +25,23 @@ class UsersService {
       },
       privateKey: process.env.JWT_SECRET_ACCESS_TOKEN as string,
       options: {
-        expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN
+        expiresIn
+      }
+    }).then((token) => {
+      const expiresAt = new Date()
+      expiresAt.setMinutes(expiresAt.getMinutes() + parseInt(expiresIn, 10))
+      const expiresTimestamp = Math.floor(expiresAt.getTime() / 1000)
+
+      return {
+        token,
+        expiresAt: expiresTimestamp
       }
     })
   }
 
   private signRefreshToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
+    const expiresIn = process.env.REFRESH_TOKEN_EXPIRES_IN ?? '100d'
+
     return signToken({
       payload: {
         user_id,
@@ -38,6 +51,15 @@ class UsersService {
       privateKey: process.env.JWT_SECRET_REFRESH_TOKEN as string,
       options: {
         expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN
+      }
+    }).then((token) => {
+      const expiresAt = new Date()
+      expiresAt.setDate(expiresAt.getDate() + parseInt(expiresIn, 10))
+      const expiresTimestamp = Math.floor(expiresAt.getTime() / 1000)
+
+      return {
+        token,
+        expiresAt: expiresTimestamp
       }
     })
   }
@@ -95,13 +117,15 @@ class UsersService {
       verify: UserVerifyStatus.Unverified
     })
     await databaseService.refreshTokens.insertOne(
-      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token.token })
     )
     console.log('email_verify_token', email_verify_token)
 
     return {
-      access_token,
-      refresh_token
+      access_token: access_token.token,
+      refresh_token: refresh_token.token,
+      expires_in_access_token: access_token.expiresAt,
+      expires_in_refresh_token: refresh_token.expiresAt
     }
   }
 
@@ -121,8 +145,10 @@ class UsersService {
     ])
 
     return {
-      access_token: new_access_token,
-      refresh_token: new_refresh_token
+      access_token: new_access_token.token,
+      refresh_token: new_refresh_token.token,
+      expires_in_access_token: new_access_token.expiresAt,
+      expires_in_refresh_token: new_refresh_token.expiresAt
     }
   }
 
@@ -132,16 +158,19 @@ class UsersService {
   }
 
   async login({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
-    const [access_token, refresh_token] = await this.signAccessAndRefreshToken({
-      user_id,
-      verify
-    })
+    const [accessToken, refreshToken] = await Promise.all([
+      this.signAccessToken({ user_id, verify }),
+      this.signRefreshToken({ user_id, verify })
+    ])
     await databaseService.refreshTokens.insertOne(
-      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refreshToken.token })
     )
+
     return {
-      access_token,
-      refresh_token
+      access_token: accessToken.token,
+      refresh_token: refreshToken.token,
+      expires_in_access_token: accessToken.expiresAt,
+      expires_in_refresh_token: refreshToken.expiresAt
     }
   }
 
@@ -210,7 +239,7 @@ class UsersService {
       })
 
       await databaseService.refreshTokens.insertOne(
-        new RefreshToken({ user_id: new ObjectId(user._id), token: refresh_token })
+        new RefreshToken({ user_id: new ObjectId(user._id), token: refresh_token.token })
       )
 
       return {
@@ -261,11 +290,13 @@ class UsersService {
     ])
     const [access_token, refresh_token] = token
     await databaseService.refreshTokens.insertOne(
-      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token })
+      new RefreshToken({ user_id: new ObjectId(user_id), token: refresh_token.token })
     )
     return {
-      access_token,
-      refresh_token
+      access_token: access_token.token,
+      refresh_token: refresh_token.token,
+      expires_in_access_token: access_token.expiresAt,
+      expires_in_refresh_token: refresh_token.expiresAt
     }
   }
 
