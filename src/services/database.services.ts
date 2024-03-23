@@ -2,6 +2,7 @@ import { config } from 'dotenv'
 import { Collection, Db, MongoClient } from 'mongodb'
 import Follower from '~/models/schemas/Followers.schema'
 import RefreshToken from '~/models/schemas/RefreshToken.schema'
+import Tweet from '~/models/schemas/Tweet.schema'
 import User from '~/models/schemas/User.schema'
 import VideoStatus from '~/models/schemas/VideoStatus.schema'
 
@@ -76,6 +77,10 @@ class DatabaseService {
 
   get videoStatus(): Collection<VideoStatus> {
     return this.db.collection(process.env.DB_VIDEO_STATUS_COLLECTION as string)
+  }
+
+  get tweets(): Collection<Tweet> {
+    return this.db.collection(process.env.DB_TWEETS_COLLECTION as string)
   }
 }
 

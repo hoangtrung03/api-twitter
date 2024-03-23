@@ -52,3 +52,29 @@ export const verifyToken = ({ token, secretOrPublicKey }: { token: string; secre
     })
   })
 }
+
+/**
+ * Decodes the access token using the provided token and the JWT secret access token.
+ *
+ * @param {string} token - The access token to decode.
+ * @return {any} The decoded access token.
+ */
+export const decodeAccessToken = (token: string) => {
+  return verifyToken({
+    token,
+    secretOrPublicKey: process.env.JWT_SECRET_ACCESS_TOKEN as string
+  })
+}
+
+/**
+ * Decodes a refresh token using the provided token and the JWT_SECRET_REFRESH_TOKEN environment variable.
+ *
+ * @param {string} token - The refresh token to decode.
+ * @return {Promise<any>} - A promise that resolves to the decoded token.
+ */
+export const decodeRefreshToken = (token: string) => {
+  return verifyToken({
+    token,
+    secretOrPublicKey: process.env.JWT_SECRET_REFRESH_TOKEN as string
+  })
+}
