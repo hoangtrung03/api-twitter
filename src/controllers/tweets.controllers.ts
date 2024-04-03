@@ -30,11 +30,8 @@ export const createTweetController = async (req: Request<ParamsDictionary, any, 
  * @return {Promise<void>} Promise that resolves to sending a JSON response with the retrieved tweet
  */
 export const getTweetController = async (req: Request, res: Response) => {
-  const { tweet_id } = req.params
-  const result = await tweetsService.getTweet(tweet_id)
-
   return res.json({
     message: TWEETS_MESSAGES.GET_TWEET_SUCCESS,
-    result: result
+    result: req.tweet
   })
 }
